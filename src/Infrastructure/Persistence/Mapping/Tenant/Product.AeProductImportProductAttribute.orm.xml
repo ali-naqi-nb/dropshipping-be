@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                  https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Domain\Model\Product\AeProductImportProductAttribute" table="ae_product_import_product_attributes">
+        <id name="id" type="uuid"/>
+        <many-to-one
+                field="aeProductImportProduct"
+                target-entity="App\Domain\Model\Product\AeProductImportProduct"
+                inversed-by="aeVariantAttributes">
+            <join-columns>
+                <join-column name="ae_product_id" referenced-column-name="ae_product_id" nullable="false" on-delete="CASCADE"/>
+                <join-column name="ae_sku_id" referenced-column-name="ae_sku_id" nullable="false" on-delete="CASCADE"/>
+            </join-columns>
+        </many-to-one>
+        <field name="aeAttributeType" length="12"/>
+        <field name="aeAttributeName" length="255"/>
+        <field name="aeAttributeValue" type="text"/>
+    </entity>
+</doctrine-mapping>

@@ -1,0 +1,8 @@
+# Validation messages
+App "{appId}" is not supported: "Die Anwendung \"{appId}\" wird nicht unterstützt."
+App "{appId}" is not supported for exchange-token: App "{appId}" is not supported for exchange-token.
+App "{appId}" is either not installed or not active: App "{appId}" is either not installed or not active.
+Tenant not found: Tenant not found.
+Invalid AliExpress product URL: 'Invalid AliExpress product URL.'
+Failed to get product information from AliExpress: 'Failed to get product information from AliExpress.'
+Failed to get access token.: Failed to get access token.

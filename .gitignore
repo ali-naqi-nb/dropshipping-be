@@ -1,0 +1,18 @@
+/.idea
+/.php-cs-fixer.cache
+.DS_Store
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.*.local
+/var
+/vendor
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+.phpunit.result.cache
+/.coverage-cache
+/coverage-report-html/*
+/coverage-report-xml/*
+###< phpunit/phpunit ###

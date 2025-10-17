@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:gedmo="http://gediminasm.org/schemas/orm/doctrine-extensions-mapping"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                  https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Domain\Model\Product\AeProductImportProduct" table="ae_product_import_products">
+        <one-to-many
+                field="aeVariantAttributes"
+                target-entity="App\Domain\Model\Product\AeProductImportProductAttribute"
+                mapped-by="aeProductImportProduct"
+                orphan-removal="true">
+            <cascade>
+                <cascade-persist/>
+            </cascade>
+        </one-to-many>
+
+        <one-to-many
+                field="aeProductImageUrls"
+                target-entity="App\Domain\Model\Product\AeProductImportProductImage"
+                mapped-by="aeProductImportProduct"
+                orphan-removal="true">
+            <cascade>
+                <cascade-persist/>
+            </cascade>
+        </one-to-many>
+
+        <id name="aeProductId" type="bigint"/>
+        <id name="aeSkuId" type="bigint"/>
+        <field name="aeSkuAttr" length="255"/>
+        <field name="aeSkuCode" length="255" nullable="true"/>
+        <field name="nbProductId" type="uuid" nullable="true"/>
+        <field name="aeProductName" length="512"/>
+        <field name="aeProductDescription" type="text" nullable="true"/>
+        <field name="aeProductCategoryName" length="255" nullable="true"/>
+        <field name="aeProductBarcode" length="255" nullable="true"/>
+        <field name="aeProductWeight" type="integer" nullable="true"/>
+        <field name="aeProductLength" type="integer" nullable="true"/>
+        <field name="aeProductWidth" type="integer" nullable="true"/>
+        <field name="aeProductHeight" type="integer" nullable="true"/>
+        <field name="aeProductStock" type="integer">
+            <options>
+                <option name="default">0</option>
+            </options>
+        </field>
+        <field name="aeSkuPrice" type="bigint" nullable="true"/>
+        <field name="aeOfferSalePrice" type="bigint" nullable="true"/>
+        <field name="aeOfferBulkSalePrice" type="bigint" nullable="true"/>
+        <field name="aeSkuCurrencyCode" length="3" nullable="true"/>
+        <field name="aeFreightCode" length="255" nullable="true"/>
+        <field name="aeShippingFee" type="bigint" nullable="true"/>
+        <field name="aeShippingFeeCurrency" length="3" nullable="true"/>
+        <field name="createdAt" type="datetime">
+            <gedmo:timestampable on="create"/>
+        </field>
+        <field name="updatedAt" type="datetime">
+            <gedmo:timestampable on="update"/>
+        </field>
+    </entity>
+</doctrine-mapping>

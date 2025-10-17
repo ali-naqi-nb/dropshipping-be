@@ -1,0 +1,289 @@
+framework:
+    messenger:
+        # Uncomment this (and the failed transport below) to send failed messages to this transport for later handling.
+        #failure_transport: failed
+        reset_on_message: true
+
+        default_bus: event.bus
+
+        buses:
+            command.bus:
+            query.bus:
+            event.bus:
+                middleware:
+                    - App\Infrastructure\Messenger\CorrelationIdMiddleware
+                    - App\Infrastructure\Messenger\TenantIdMiddleware
+                    - App\Infrastructure\Messenger\LogMessageMiddleware
+
+        serializer:
+            default_serializer: App\Infrastructure\Messenger\MessageSerializer
+
+        transports:
+            # https://symfony.com/doc/current/messenger.html#transport-configuration
+            failed: 'doctrine://default?queue_name=failed'
+
+            async_db_created:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 30000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: '%app.service_name%_db_created'
+                        type: direct
+                    queues:
+                        '%app.service_name%_db_created': ~
+            async_tenant_config_updated:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: tenant_config_updated
+                        type: direct
+                    queues:
+                        'tenant_config_updated_%app.service_name%': ~
+            async_configured_service_db:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: configured_service_db
+                        type: direct
+                    queues:
+                        configured_service_db: ~
+            async_deleted_tenant:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: deleted_tenants
+                        type: direct
+                    queues:
+                        'deleted_tenant_%app.service_name%': ~
+            async_tenant_status_updated:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: tenant_status_updated
+                        type: direct
+                    queues:
+                        'tenant_status_updated_%app.service_name%': ~
+            sync_rpc:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                serializer: messenger.transport.json_serializer
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: sync_rpc
+                        type: topic
+                    queues:
+                        '%app.service_name%.sync_rpc':
+                            binding_keys: ['%app.service_name%.#']
+            async_rpc:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                serializer: messenger.transport.json_serializer
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: async_rpc
+                        type: topic
+                    queues:
+                        '%app.service_name%.async_rpc':
+                            binding_keys: ['%app.service_name%.#']
+            async_create_db_app_installed:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: create_db_app_installed
+                        type: direct
+                    queues:
+                        create_db_app_installed: ~
+            async_ds_order_created:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_order_created
+                        type: direct
+                    queues:
+                        ds_order_created: ~
+            async_ds_order_confirmed:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_order_confirmed
+                        type: direct
+                    queues:
+                        ds_order_confirmed: ~
+            async_ds_product_updated:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_product_updated
+                        type: direct
+                    queues:
+                        ds_product_updated: ~
+
+            async_run_console_command:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: console_run_command
+                        type: fanout
+                    queues:
+                        dropshipping_run_console_command: ~
+
+            async_ds_product_type_imported:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_product_type_imported
+                        type: direct
+                    queues:
+                        ds_product_type_imported: ~
+
+            async_ds_attributes_imported:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_attributes_imported
+                        type: direct
+                    queues:
+                        ds_attributes_imported: ~
+
+            async_ds_order_status_updated:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange:
+                        name: ds_order_status_updated
+                        type: direct
+                    queues:
+                        ds_order_status_updated: ~
+
+            async_ds_product_group_imported:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_product_group_imported
+                        type: direct
+                    queues:
+                        ds_product_group_imported: ~
+
+            async_ds_product_images_imported:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_product_images_imported
+                        type: direct
+                    queues:
+                        ds_product_images_imported: ~
+
+            async_ds_product_images_updated:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    delay: 2000
+                    max_retries: 5
+                    multiplier: 2
+                options:
+                    exchange:
+                        name: ds_product_images_updated
+                        type: direct
+                    queues:
+                        ds_product_images_updated: ~
+
+        routing:
+            'App\Domain\Model\Tenant\DropshippingDbCreated': async_db_created
+            'App\Domain\Model\Tenant\ServiceDbConfigured': async_configured_service_db
+            'App\Domain\Model\Tenant\TenantDeleted': async_deleted_tenant
+            'App\Domain\Model\Tenant\TenantConfigUpdated': async_tenant_config_updated
+            'App\Domain\Model\App\CreateDbAppInstalled': async_create_db_app_installed
+            'App\Domain\Model\Order\DsOrderStatusUpdated': async_ds_order_status_updated
+            'App\Infrastructure\Rpc\RpcMessage': async_rpc
+            'App\Infrastructure\Rpc\RpcCommand': sync_rpc
+            'App\Domain\Model\Order\DsOrderCreated': async_ds_order_created
+            'App\Domain\Model\Order\DsOrderConfirmed': async_ds_order_confirmed
+            'App\Domain\Model\Product\DsProductUpdated': async_ds_product_updated
+            'App\Domain\Model\ConsoleCommand\ConsoleCommandEvent': async_run_console_command
+            'App\Domain\Model\Product\DsProductTypeImported': async_ds_product_type_imported
+            'App\Domain\Model\Product\DsAttributesImported': async_ds_attributes_imported
+            'App\Domain\Model\Product\DsProductGroupImported': async_ds_product_group_imported
+            'App\Domain\Model\Product\DsProductImagesImported': async_ds_product_images_imported
+            'App\Domain\Model\Product\DsProductImagesUpdated': async_ds_product_images_updated
+
+when@test:
+    framework:
+        messenger:
+            routing:
+                'App\Tests\Integration\Infrastructure\Domain\Model\Bus\Event\DummyEvent': async_dummy
+            transports:
+                failed: 'in-memory://'
+                async_dummy: 'in-memory://'
+                async_db_created: 'in-memory://'
+                async_configured_service_db: 'in-memory://'
+                async_deleted_tenant: 'in-memory://'
+                async_tenant_config_updated: 'in-memory://'
+                async_tenant_status_updated: 'in-memory://'
+                async_ds_order_status_updated: 'in-memory://'
+                sync_rpc: 'in-memory://'
+                async_rpc: 'in-memory://'
+                async_create_db_app_installed: 'in-memory://'
+                async_ds_order_created: 'in-memory://'
+                async_ds_order_confirmed: 'in-memory://'
+                async_ds_product_updated: 'in-memory://'
+                async_run_console_command: 'in-memory://'
+                async_ds_product_type_imported: 'in-memory://'
+                async_ds_attributes_imported: 'in-memory://'
+                async_ds_product_group_imported: 'in-memory://'
+                async_ds_product_images_imported: 'in-memory://'
+                async_ds_product_images_updated: 'in-memory://'

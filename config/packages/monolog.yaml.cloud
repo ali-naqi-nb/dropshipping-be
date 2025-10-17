@@ -1,0 +1,66 @@
+monolog:
+    channels:
+        - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
+
+when@dev:
+    monolog:
+        handlers:
+            stackdriver:
+                type: service
+                id: stackdriver_handler
+                channels: [ "!event" ]
+            console:
+                type: console
+                process_psr_3_messages: false
+                channels: [ "!event", "!doctrine", "!console" ]
+                formatter: monolog.formatter.line_formatter
+
+when@test:
+    monolog:
+        handlers:
+            main:
+                type: fingers_crossed
+                action_level: error
+                handler: nested
+                excluded_http_codes: [ 404, 405 ]
+                channels: [ "!event" ]
+            nested:
+                type: stream
+                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                level: debug
+                formatter: monolog.formatter.line_formatter
+            test:
+                type: test
+                level: warning
+
+when@prod:
+    monolog:
+        handlers:
+            info:
+                type: filter
+                accepted_levels: [ INFO, NOTICE, WARNING ]
+                handler: stackdriver_failsafe
+                channels: [ "!event", "!deprecation" ]
+            debug_and_errors:
+                type: filter
+                accepted_levels: [ DEBUG, ERROR, CRITICAL, ALERT, EMERGENCY ]
+                handler: fingers_crossed
+                channels: [ "!event", "!deprecation" ]
+            console:
+                type: console
+                process_psr_3_messages: false
+                channels: [ "!event", "!doctrine" ]
+            fingers_crossed:
+                type: fingers_crossed
+                action_level: error
+                handler: stackdriver_failsafe
+                stop_buffering: false
+                buffer_size: 50
+                nested: true
+            stackdriver_failsafe:
+                type: whatfailuregroup
+                members: [stackdriver]
+                nested: true
+            stackdriver:
+                type: service
+                id: stackdriver_handler

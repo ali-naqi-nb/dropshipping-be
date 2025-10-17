@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:gedmo="http://gediminasm.org/schemas/orm/doctrine-extensions-mapping"
+    xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Domain\Model\Order\DsOrderMapping" table="ds_order_mapping">
+        <id name="id" type="uuid" />
+        <field name="nbOrderId" column="nb_order_id" type="uuid" nullable="false" />
+        <field name="dsOrderId" column="ds_order_id" type="string" length="36" nullable="false" />
+        <field name="dsProvider" column="ds_provider" type="string" length="24" nullable="false" />
+        <field name="dsStatus" column="ds_status" type="string" length="255" nullable="true" />
+        <field name="createdAt" type="datetime">
+            <gedmo:timestampable on="create" />
+        </field>
+        <field name="updatedAt" type="datetime">
+            <gedmo:timestampable on="update" />
+        </field>
+    </entity>
+</doctrine-mapping>
