@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                  https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Domain\Model\Product\AeProductImport" table="ae_product_imports">
+        <id name="id" type="uuid"/>
+        <field name="aeProductId" type="bigint" nullable="true"/>
+        <field name="completedStep" type="smallint" nullable="false" default="0"/>
+        <field name="totalSteps" type="smallint" nullable="false" default="5"/>
+        <field name="shippingOptions" type="json" nullable="true"/>
+        <field name="groupData" type="json" nullable="true"/>
+    </entity>
+</doctrine-mapping>

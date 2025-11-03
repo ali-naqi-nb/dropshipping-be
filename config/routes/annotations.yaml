@@ -1,0 +1,29 @@
+admin_controllers_v1:
+    resource: ../../src/Infrastructure/Delivery/Api/V1/Admin/
+    type: annotation
+    prefix: '/%app.path_prefix%/admin/v1/{_locale}'
+    name_prefix: admin_
+    requirements:
+        _locale: '%app.supported_locales%'
+
+public_controllers_v1:
+    resource: ../../src/Infrastructure/Delivery/Api/V1/Public/
+    type: annotation
+    prefix: '/%app.path_prefix%/v1/{_locale}'
+    name_prefix: public_
+    requirements:
+        _locale: '%app.supported_locales%'
+
+doc_controller:
+    resource: ../../src/Infrastructure/Delivery/Api/V1/GetDocumentationAction.php
+    type: annotation
+    prefix: '/%app.path_prefix%/v1'
+
+json_rpc_controller_v1:
+    resource: ../../src/Infrastructure/Delivery/Api/V1/JsonRpcAction.php
+    type: annotation
+    prefix: /dropshipping/v1
+
+kernel:
+    resource: ../../src/Kernel.php
+    type: annotation

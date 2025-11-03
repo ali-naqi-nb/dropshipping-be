@@ -1,0 +1,325 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    container.dumper.inline_factories: '%env(bool:INLINE_FACTORIES)%'
+    app.supported_locales: en_US|bg_BG|ro_RO|el_GR|de_DE|fr_FR|hu_HU|pl_PL|id_ID|ur_PK|tl_PH
+    app.supported_languages: [ 'en_US', 'bg_BG', 'ro_RO', 'el_GR', 'de_DE', 'fr_FR', 'hu_HU', 'pl_PL', 'id_ID', 'ur_PK', 'tl_PH' ]
+    app.redis_dsn: '%env(REDIS_DSN)%'
+    app.path_prefix: 'dropshipping'
+    app.service_name: 'dropshipping'
+    app.tenant_commands:
+        - doctrine:fixtures:load
+        - doctrine:migrations:diff
+        - doctrine:migrations:execute
+        - doctrine:migrations:generate
+        - doctrine:migrations:migrate
+        - doctrine:migrations:version
+        - doctrine:migrations:status
+        - doctrine:mapping:info
+        - doctrine:schema:validate
+        - doctrine:schema:update
+    # Most routes require x-tenant-id header
+    app.non_tenant_routes:
+        - docs
+        - admin_install_app
+        - admin_uninstall_app
+        - admin_get_all_apps
+        - admin_get_single_app
+        - admin_update_app
+        - admin_authorize_app
+        - public_sync_orders_status_webhook
+        - admin_refresh_app_token
+    app.wrap_in_transaction: false
+    app.admin_routes_name_prefix: 'admin_'
+    app.db_encryption_key: '%env(ENCRYPTION_KEY)%'
+    app.aliexpress_app_key: '%env(ALI_EXPRESS_APP_KEY)%'
+    app.aliexpress_app_secret: '%env(ALI_EXPRESS_APP_SECRET)%'
+    app.sensitive_data:
+        - password
+        - token
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            $appServiceName: '%app.service_name%'
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    App\Infrastructure\Delivery\Api\:
+        resource: ../src/Infrastructure/Delivery/Api/
+        tags: [ 'controller.service_arguments' ]
+
+    App\Infrastructure\Delivery\Api\V1\GetDocumentationAction:
+        tags: [ 'controller.service_arguments' ]
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
+    App\Infrastructure\Domain\Model\Language\LanguageService:
+        arguments:
+            $supportedLanguages: '%app.supported_languages%'
+
+    doctrine_repositories:
+        namespace: App\Infrastructure\Domain\Model\
+        resource: '%kernel.project_dir%/src/Infrastructure/Domain/Model/**/Doctrine*Repository.php'
+        tags:
+            - { name: doctrine.repository_service }
+
+    command_handlers:
+        namespace: App\Application\Command\
+        resource: '%kernel.project_dir%/src/Application/Command/*/*/*CommandHandler.php'
+        autoconfigure: false
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+    
+    App\Application\Command\Order\AliexpressSyncOrderStatus\AliexpressSyncOrdersStatusCommandHandler:
+        arguments:
+            $doctrineTenantConnection: '@doctrine.dbal.tenant_connection'
+            $wrapInTransaction: '%app.wrap_in_transaction%'
+        tags:
+            - { name: messenger.message_handler, bus: command.bus }
+
+    query_handlers:
+        namespace: App\Application\Query\
+        resource: '%kernel.project_dir%/src/Application/Query/*/*/*QueryHandler.php'
+        autoconfigure: false
+        tags:
+            - { name: messenger.message_handler, bus: query.bus }
+
+    event_handlers:
+        namespace: App\Application\EventHandler\
+        resource: '%kernel.project_dir%/src/Application/EventHandler/**/*Handler.php'
+        autoconfigure: false
+        tags:
+            - { name: messenger.message_handler, bus: event.bus }
+
+    Gedmo\Timestampable\TimestampableListener:
+        tags:
+            - { name: doctrine.event_subscriber }
+
+    Gedmo\SoftDeleteable\SoftDeleteableListener:
+        tags:
+            - { name: doctrine.event_subscriber }
+
+    App\Infrastructure\Logger\CorrelationIdProcessor:
+        tags:
+            - { name: monolog.processor }
+
+    App\Infrastructure\Logger\TenantIdProcessor:
+        tags:
+            - { name: monolog.processor }
+
+    Monolog\Processor\MemoryPeakUsageProcessor:
+        tags:
+            - { name: monolog.processor }
+
+    Monolog\Processor\IntrospectionProcessor:
+        tags:
+            - { name: monolog.processor }
+
+    App\Infrastructure\Logger\DataMaskingProcessor:
+        arguments:
+            $sensitiveData: '%app.sensitive_data%'
+        tags:
+            - { name: monolog.processor }
+
+    monolog.formatter.line_formatter:
+        class: Monolog\Formatter\LineFormatter
+        arguments:
+            - "[%%datetime%%] [%%extra.memory_peak_usage%%] [%%extra.correlation_id%%] %%channel%%.%%level_name%%: %%message%% %%context%% %%extra%%\n"
+
+    Google\Cloud\Core\Compute\Metadata: ~
+
+    App\Infrastructure\Logger\K8sMetadataProvider:
+        arguments:
+            $projectId: '%env(GCP_PROJECT_ID)%'
+            $containerName: '%env(default::GCP_CONTAINER_NAME)%'
+            $podName: '%env(default::GCP_POD_NAME)%'
+            $namespace: '%env(default::GCP_NAMESPACE_NAME)%'
+
+    Google\Cloud\Core\Report\MetadataProviderInterface $k8sMetadataProvider: '@App\Infrastructure\Logger\K8sMetadataProvider'
+
+    stackdriver_handler:
+        class: App\Infrastructure\Logger\StackdriverHandler
+        arguments:
+            $projectId: '%env(GCP_PROJECT_ID)%'
+            $keyFilePath: '%env(default::GCP_SERVICE_ACCOUNT_KEY_FILE)%'
+            $name: 'stackdriver'
+
+    App\Infrastructure\Delivery\Console\RunTestsCommand:
+        arguments:
+            $kernel: '@kernel'
+            $codeCoverageXmlReportDir: '%kernel.project_dir%/coverage-report-xml'
+
+    App\Infrastructure\Persistence\Connection\RedisTenantConnection:
+        arguments:
+            $redis: '@cache.default_redis_provider'
+
+    App\Infrastructure\Delivery\Console\TenantCommandSubscriber:
+        arguments:
+            $connection: '@doctrine.dbal.tenant_connection'
+            $allowedCommands: '%app.tenant_commands%'
+
+    App\Infrastructure\Http\TenantRequestSubscriber:
+        arguments:
+            $doctrineTenantConnection: '@doctrine.dbal.tenant_connection'
+            $nonTenantRoutes: '%app.non_tenant_routes%'
+            $wrapInTransaction: '%app.wrap_in_transaction%'
+            $adminRoutesNamePrefix: '%app.admin_routes_name_prefix%'
+
+    App\Infrastructure\Messenger\TenantIdMiddleware:
+        arguments:
+            $doctrineTenantConnection: '@doctrine.dbal.tenant_connection'
+
+    App\Infrastructure\Collector\MultiDbCollector:
+        tags:
+            - name: data_collector
+              id: 'database_connections'
+              template: 'data_collector/database_connections.html.twig'
+
+    App\Domain\Model\SessionUser\SessionUserInterface:
+        factory: [ '@security.helper', 'getUser' ]
+
+    App\Infrastructure\Domain\Model\Tenant\TenantService:
+        arguments:
+            $dbEncryptionKey: '%app.db_encryption_key%'
+
+    App\Infrastructure\Rpc\Transport\Amqp\AmqpRpcCommandReceiver:
+        arguments:
+            $doctrineTenantConnection: '@doctrine.dbal.tenant_connection'
+
+    messenger.transport.json_serializer:
+        class: Symfony\Component\Messenger\Transport\Serialization\Serializer
+        arguments:
+            $serializer: '@rpc_serializer'
+            $format: 'json'
+
+    rpc_serializer:
+        class: 'Symfony\Component\Serializer\Serializer'
+        autoconfigure: false
+        factory: [ 'App\Infrastructure\Messenger\SymfonySerializerFactory', 'create' ]
+        arguments:
+            $taggedNormalizers: !tagged_iterator { tag: 'serializer.normalizer', default_priority_method: getPriority }
+            $additionalNormalizers:
+                - !service
+                    class: 'Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer'
+                - !service
+                    class: 'Symfony\Component\Serializer\Normalizer\PropertyNormalizer'
+            $encoders:
+                - !service
+                    class: 'Symfony\Component\Serializer\Encoder\JsonEncoder'
+
+    App\Infrastructure\Rpc\Transport\RpcResultReceiverInterface:
+        class: App\Infrastructure\Rpc\Transport\ExceptionRpcResultReceiver\ExceptionRpcResultReceiverDecorator
+        arguments:
+            $decoratedResultReceiver: '@App\Infrastructure\Rpc\Transport\Cache\CacheRpcResultReceiver'
+
+    App\Infrastructure\Service\App\Aliexpress\AliexpressAccessTokenManager:
+        arguments:
+            $appKey: '%app.aliexpress_app_key%'
+            $appSecret: '%app.aliexpress_app_secret%'
+
+    App\Application\Service\App\AppResponseMapper:
+        arguments:
+            $aliExpressAppKey: '%app.aliexpress_app_key%'
+
+    App\Infrastructure\Service\AliExpress\DropshipperService:
+        arguments:
+            $appKey: '%app.aliexpress_app_key%'
+            $appSecret: '%app.aliexpress_app_secret%'
+
+when@test:
+    parameters:
+        app.wrap_in_transaction: true
+        app.redis_dsn: '%env(TEST_REDIS_DSN)%'
+        app.aliexpress_app_key: 0
+
+    services:
+        # default configuration for services in *this* file
+        _defaults:
+            autowire: true      # Automatically injects dependencies in your services.
+            autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+        App\Application\Service\Encryption\EncryptorInterface:
+            class: App\Tests\Shared\Double\Service\Encryption\NoopEncryptor
+
+        App\Tests\Shared\Db\Fixtures\Main\:
+            resource: ../tests/Shared/Db/Fixtures/Main/
+            arguments:
+                $connection: '@doctrine.dbal.default_connection'
+                $resourceDir: '%kernel.project_dir%/tests/Shared/Db/Resources/Main/'
+
+        App\Tests\Shared\Db\Fixtures\Tenant\:
+            resource: ../tests/Shared/Db/Fixtures/Tenant/
+            arguments:
+                $connection: '@doctrine.dbal.tenant_connection'
+                $resourceDir: '%kernel.project_dir%/tests/Shared/Db/Resources/Tenant/'
+        
+        App\Tests\Shared\Service\MockHttpClientFactory:
+            arguments: [ '%kernel.project_dir%' ]
+
+        command_bus_interface: # keeps the alias un-removed from the container
+            alias: 'App\Domain\Model\Bus\Command\CommandBusInterface'
+            public: true
+
+        event_bus_interface: # keeps the alias un-removed from the container
+            alias: 'App\Domain\Model\Bus\Event\EventBusInterface'
+            public: true
+
+        query_bus_interface: # keeps the alias un-removed from the container
+            alias: 'App\Domain\Model\Bus\Query\QueryBusInterface'
+            public: true
+
+        response_mapper: # keeps the alias un-removed from the container
+            alias: 'App\Infrastructure\Http\ResponseMapper'
+            public: true
+
+        test_command_handlers:
+            namespace: App\Tests\Integration\Infrastructure\Domain\Model\Bus\Command\
+            resource: '%kernel.project_dir%/tests/Integration/Infrastructure/Domain/Model/Bus/Command/*CommandHandler.php'
+            tags:
+                - { name: messenger.message_handler, bus: command.bus }
+
+        test_query_handlers:
+            namespace: App\Tests\Integration\Infrastructure\Domain\Model\Bus\Query\
+            resource: '%kernel.project_dir%/tests/Integration/Infrastructure/Domain/Model/Bus/Query/*QueryHandler.php'
+            tags:
+                - { name: messenger.message_handler, bus: query.bus }
+
+        App\Tests\Integration\Infrastructure\Rpc\CompilerPass\Resources\:
+            resource: ../tests/Integration/Infrastructure/Rpc/CompilerPass/Resources
+
+        App\Infrastructure\Rpc\Client\RpcCommandClientInterface:
+            class: App\Infrastructure\Rpc\Client\RpcCommandClient
+            public: true
+
+        App\Infrastructure\Rpc\Transport\RpcResultReceiverInterface:
+            class: App\Tests\Double\Rpc\Transport\MockResultReceiver
+            public: true
+
+        App\Infrastructure\Rpc\Transport\RpcResultSenderInterface:
+            class: App\Tests\Double\Rpc\Transport\MockResultSender
+            public: true
+        
+        App\Tests\Functional\Infrastructure\Delivery\Rpc\V1\Test\InvalidParamsAction:
+            public: true
+            
+        App\Tests\Functional\Infrastructure\Delivery\Rpc\V1\Test\InvalidRequestAction:
+            public: true
+    
+    framework:
+        http_client:
+            mock_response_factory: App\Tests\Shared\Service\MockHttpClientFactory

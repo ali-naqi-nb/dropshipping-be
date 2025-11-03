@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:gedmo="http://gediminasm.org/schemas/orm/doctrine-extensions-mapping"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                   https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Domain\Model\Tenant\Tenant" table="tenants">
+        <id name="id" type="uuid"/>
+        <field name="companyId" type="uuid"/>
+        <field name="domain"/>
+        <field name="dbConfig" length="1024"/>
+        <field name="defaultLanguage" length="5"/>
+        <field name="defaultCurrency" length="3"/>
+        <field name="apps" type="json" nullable="true" />
+        <field name="status"/>
+        <field name="isAvailable" type="boolean"/>
+        <field name="configuredAt" type="datetime" nullable="true"/>
+        <field name="createdAt" type="datetime"/>
+        <field name="updatedAt" type="datetime"/>
+        <field name="deletedAt" column="deleted_at" type="datetime" nullable="true"/>
+        <gedmo:soft-deleteable field-name="deletedAt" time-aware="false" hard-delete="true" />
+    </entity>
+</doctrine-mapping>

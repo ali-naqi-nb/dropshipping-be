@@ -1,0 +1,21 @@
+{
+    "aliexpress_ds_category_get_response": {
+        "resp_result": {
+            "result": {
+                "total_result_count": 1,
+                "categories": {
+                    "category": [
+                        {
+                            "parent_category_id": 322,
+                            "category_name": "Men's Shoes",
+                            "category_id": 200131145
+                        }
+                    ]
+                }
+            },
+            "resp_code": 200,
+            "resp_msg": "Call succeeds"
+        },
+        "request_id": "21410fef17241629382507774"
+    }
+}

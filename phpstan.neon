@@ -1,0 +1,24 @@
+parameters:
+    paths:
+        - src
+        - tests
+        - migrations
+
+    excludePaths:
+        - .php-cs-fixer.dist.php
+
+    # The level 9 is the highest level but it's impossible to achieve
+    level: 8
+
+    ignoreErrors:
+        -
+            identifier: missingType.generics
+        -
+            identifier: missingType.iterableValue
+        - '#Return type of call to method PHPUnit\\Framework\\TestCase::createMock\(\) contains unresolvable type#'
+        - '#Return type of call to method PHPUnit\\Framework\\MockObject\\MockBuilder<[^>]+>::getMock\(\) contains unresolvable type#'
+        - '#Constructor of class App\\Tests\\Shared\\Db\\Fixtures\\(Main|Tenant)\\AuthTokenFixtures has an unused parameter \$connection|\$resourceDir.#'
+        - '#has unresolvable native type#'
+
+    parallel:
+        processTimeout: 300.0

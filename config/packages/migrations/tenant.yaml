@@ -1,0 +1,3 @@
+migrations_paths:
+    'TenantMigrations': 'migrations/tenant'
+em: tenant
