@@ -53,6 +53,17 @@ final class CreateAliexpressProductGroupValidator extends AbstractValidator impl
                             'images' => new Assert\All([
                                 new Assert\NotBlank(),
                             ]),
+                            'shippingOption' => new Assert\Collection([
+                                'fields' => [
+                                    'code' => new Assert\NotBlank(),
+                                    'shipsFrom' => new Assert\NotBlank(),
+                                    'minDeliveryDays' => [new Assert\Type('integer'), new Assert\PositiveOrZero()],
+                                    'maxDeliveryDays' => [new Assert\Type('integer'), new Assert\PositiveOrZero()],
+                                    'shippingFeePrice' => [new Assert\Type('integer'), new Assert\PositiveOrZero()],
+                                    'shippingFeeCurrency' => new Assert\NotBlank(),
+                                    'isFreeShipping' => new Assert\Type('bool'),
+                                ],
+                            ]),
                         ],
                     ]),
                 ]),

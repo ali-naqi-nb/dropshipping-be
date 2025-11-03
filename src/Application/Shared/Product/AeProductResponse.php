@@ -6,6 +6,7 @@ namespace App\Application\Shared\Product;
 
 use App\Domain\Model\Bus\Command\CommandResponseInterface;
 use App\Domain\Model\Bus\Query\QueryResponseInterface;
+use App\Domain\Model\Product\AeAttributeType;
 use App\Domain\Model\Product\AeProductImportProduct;
 use App\Domain\Model\Product\AeProductImportProductAttribute;
 
@@ -20,6 +21,7 @@ final class AeProductResponse implements QueryResponseInterface, CommandResponse
         private readonly int|string $aeProductId,
         private readonly int|string $aeSkuId,
         private readonly string $aeProductName,
+        private readonly ?string $variantName,
         private readonly ?string $aeProductCategoryName,
         private readonly int $aeSkuStock,
         private readonly ?int $aeSkuPrice,
@@ -45,6 +47,11 @@ final class AeProductResponse implements QueryResponseInterface, CommandResponse
     public function getAeProductName(): string
     {
         return $this->aeProductName;
+    }
+
+    public function getVariantName(): ?string
+    {
+        return $this->variantName;
     }
 
     public function getAeProductCategoryName(): ?string
@@ -117,10 +124,13 @@ final class AeProductResponse implements QueryResponseInterface, CommandResponse
             $urls[] = $url;
         }
 
+        $variantName = self::generateVariantName($importProduct);
+
         return new self(
             aeProductId: $importProduct->getAeProductId(),
             aeSkuId: $importProduct->getAeSkuId(),
             aeProductName: $importProduct->getAeProductName(),
+            variantName: $variantName,
             aeProductCategoryName: $importProduct->getAeProductCategoryName(),
             aeSkuStock: $importProduct->getAeProductStock(),
             aeSkuPrice: $importProduct->getAeSkuPrice(),
@@ -134,5 +144,23 @@ final class AeProductResponse implements QueryResponseInterface, CommandResponse
             aeProductImageUrls: $urls,
             aeProductShippingOptions: $shippingOptions,
         );
+    }
+
+    private static function generateVariantName(AeProductImportProduct $importProduct): ?string
+    {
+        $variantAttributes = $importProduct->getAeVariantAttributes();
+
+        $variantValues = [];
+        foreach ($variantAttributes as $attribute) {
+            if (AeAttributeType::SkuProperty === $attribute->getAeAttributeType()) {
+                $variantValues[] = $attribute->getAeAttributeValue();
+            }
+        }
+
+        if (empty($variantValues)) {
+            return null;
+        }
+
+        return implode(', ', $variantValues);
     }
 }

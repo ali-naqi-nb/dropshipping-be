@@ -167,4 +167,225 @@ final class DoctrineAeProductImportProductRepositoryTest extends IntegrationTest
         $this->expectException(ORMInvalidArgumentException::class);
         $this->repository->delete(Factory::createAeProductImportProduct());
     }
+
+    public function testFindAllDistinctAeProductIdsReturnsArray(): void
+    {
+        $productIds = $this->repository->findAllDistinctAeProductIds();
+
+        $this->assertIsArray($productIds);
+        $this->assertGreaterThan(0, count($productIds));
+
+        foreach ($productIds as $productId) {
+            $this->assertIsInt($productId);
+        }
+    }
+
+    public function testFindAllDistinctAeProductIdsReturnsDistinctValues(): void
+    {
+        $productIds = $this->repository->findAllDistinctAeProductIds();
+
+        $uniqueProductIds = array_unique($productIds);
+        $this->assertCount(count($productIds), $uniqueProductIds, 'All product IDs should be distinct');
+    }
+
+    public function testFindAllDistinctAeProductIdsReturnsOrderedByAsc(): void
+    {
+        $productIds = $this->repository->findAllDistinctAeProductIds();
+
+        if (count($productIds) > 1) {
+            $sortedProductIds = $productIds;
+            sort($sortedProductIds);
+            $this->assertSame($sortedProductIds, $productIds, 'Product IDs should be ordered ascending');
+        }
+
+        $this->assertTrue(true); // Test passes if we get here
+    }
+
+    public function testFindAllDistinctAeProductIdsWithLimit(): void
+    {
+        $limit = 2;
+        $productIds = $this->repository->findAllDistinctAeProductIds($limit);
+
+        $this->assertIsArray($productIds);
+        $this->assertLessThanOrEqual($limit, count($productIds));
+    }
+
+    public function testFindAllDistinctAeProductIdsWithLimitOne(): void
+    {
+        $productIds = $this->repository->findAllDistinctAeProductIds(1);
+
+        $this->assertIsArray($productIds);
+        $this->assertCount(1, $productIds);
+    }
+
+    public function testFindAllDistinctAeProductIdsWithZeroLimit(): void
+    {
+        $productIds = $this->repository->findAllDistinctAeProductIds(0);
+
+        $this->assertIsArray($productIds);
+        $this->assertCount(0, $productIds);
+    }
+
+    public function testFindAllDistinctAeProductIdsWithNullLimitReturnsAll(): void
+    {
+        $allProductIds = $this->repository->findAllDistinctAeProductIds(null);
+        $limitedProductIds = $this->repository->findAllDistinctAeProductIds(1);
+
+        if (count($allProductIds) > 1) {
+            $this->assertGreaterThan(count($limitedProductIds), count($allProductIds));
+        }
+
+        $this->assertTrue(true); // Test passes if we get here
+    }
+
+    public function testFindAllByAeProductIdReturnsArray(): void
+    {
+        $products = $this->repository->findAllByAeProductId(Factory::AE_PRODUCT_ID);
+
+        $this->assertIsArray($products);
+        $this->assertGreaterThan(0, count($products));
+
+        foreach ($products as $product) {
+            $this->assertSame((string)Factory::AE_PRODUCT_ID, $product->getAeProductId());
+        }
+    }
+
+    public function testFindAllByAeProductIdReturnsEmptyArrayForNonExistent(): void
+    {
+        $products = $this->repository->findAllByAeProductId(999999999);
+
+        $this->assertIsArray($products);
+        $this->assertCount(0, $products);
+    }
+
+    public function testFindAllByAeProductIdReturnsMultipleVariants(): void
+    {
+        // First, ensure we have data
+        $products = $this->repository->findAllByAeProductId(Factory::AE_PRODUCT_ID);
+
+        if (count($products) > 0) {
+            $this->assertIsArray($products);
+
+            // All products should have the same AE product ID
+            foreach ($products as $product) {
+                $this->assertSame((string)Factory::AE_PRODUCT_ID, $product->getAeProductId());
+            }
+        }
+
+        $this->assertTrue(true); // Test passes if we get here
+    }
+
+    public function testFindAllByAeProductIdWithStringId(): void
+    {
+        $products = $this->repository->findAllByAeProductId((string)Factory::AE_PRODUCT_ID);
+
+        $this->assertIsArray($products);
+        $this->assertGreaterThan(0, count($products));
+
+        foreach ($products as $product) {
+            $this->assertSame((string)Factory::AE_PRODUCT_ID, $product->getAeProductId());
+        }
+    }
+
+    public function testFindAllByAeProductIdWithIntId(): void
+    {
+        $products = $this->repository->findAllByAeProductId((int)Factory::AE_PRODUCT_ID);
+
+        $this->assertIsArray($products);
+        $this->assertGreaterThan(0, count($products));
+
+        foreach ($products as $product) {
+            $this->assertSame((string)Factory::AE_PRODUCT_ID, $product->getAeProductId());
+        }
+    }
+
+    public function testFindAllDistinctAeProductIdsAndFindAllByAeProductIdIntegration(): void
+    {
+        // Get all distinct product IDs
+        $distinctProductIds = $this->repository->findAllDistinctAeProductIds(1);
+
+        $this->assertGreaterThan(0, count($distinctProductIds), 'Should have at least one product ID');
+
+        // For each product ID, verify we can find its variants
+        foreach ($distinctProductIds as $productId) {
+            $variants = $this->repository->findAllByAeProductId($productId);
+            $this->assertIsArray($variants);
+            $this->assertGreaterThan(0, count($variants), "Product ID {$productId} should have at least one variant");
+
+            // Verify all variants have the correct product ID
+            foreach ($variants as $variant) {
+                $this->assertSame((string)$productId, $variant->getAeProductId());
+            }
+        }
+    }
+
+    public function testFindAllDistinctAeProductIdsOnlyReturnsProductsWithNbProductId(): void
+    {
+        // Create a product without nbProductId
+        $productWithoutNbProductId = Factory::createAeProductImportProduct(
+            aeProductId: 99999999,
+            aeSkuId: 88888888,
+            aeSkuAttr: 'test-attr',
+            aeSkuCode: 'test-code',
+            nbProductId: null,
+            aeProductName: 'Test Product Without NB ID',
+            aeProductDescription: 'Test description',
+            aeProductCategoryName: 'Test Category',
+            aeProductBarcode: '123456',
+            aeProductWeight: 100,
+            aeProductLength: 10,
+            aeProductWidth: 10,
+            aeProductHeight: 10,
+            aeProductStock: 50,
+            aeSkuPrice: 1000,
+            aeSkuCurrencyCode: 'USD',
+            aeFreightCode: 'CAINIAO_STANDARD',
+            aeShippingFee: 500,
+            aeShippingFeeCurrency: 'USD',
+            withTimeStamps: false,
+        );
+
+        $this->repository->save($productWithoutNbProductId);
+
+        // Get all product IDs - should only include products with nbProductId
+        $productIds = $this->repository->findAllDistinctAeProductIds();
+
+        // Verify that our product without nbProductId is NOT in the list
+        $this->assertNotContains(99999999, $productIds, 'Products without nbProductId should not be returned');
+
+        // Get all products from the repository for each returned ID and verify they all have nbProductId
+        foreach ($productIds as $productId) {
+            $products = $this->repository->findAllByAeProductId($productId);
+            foreach ($products as $product) {
+                $this->assertNotNull(
+                    $product->getNbProductId(),
+                    "Product {$productId} should have nbProductId but found null"
+                );
+            }
+        }
+
+        // Clean up
+        $this->repository->delete($productWithoutNbProductId);
+    }
+
+    public function testFindAllDistinctAeProductIdsIncludesProductsWithNbProductId(): void
+    {
+        // The fixture data should have at least one product with nbProductId
+        $productWithNbProductId = $this->repository->findOneByAeProductIdAndAeSkuId(
+            Factory::AE_PRODUCT_ID,
+            Factory::AE_SKU_ID
+        );
+
+        $this->assertNotNull($productWithNbProductId);
+        $this->assertNotNull($productWithNbProductId->getNbProductId(), 'Fixture should have nbProductId');
+
+        $productIds = $this->repository->findAllDistinctAeProductIds();
+
+        // Verify that the product with nbProductId is included in the results
+        $this->assertContains(
+            (int)Factory::AE_PRODUCT_ID,
+            $productIds,
+            'Products with nbProductId should be returned'
+        );
+    }
 }

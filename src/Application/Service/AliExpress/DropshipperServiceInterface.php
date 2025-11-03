@@ -38,5 +38,10 @@ interface DropshipperServiceInterface
         string $currency,
     ): ?array;
 
+    public function getAddress(
+        string $countryCode,
+        string $language
+    ): ?array;
+
     public function createOrder(array $payload): ?array;
 }

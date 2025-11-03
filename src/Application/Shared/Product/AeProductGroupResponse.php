@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Application\Shared\Product;
 
 use App\Domain\Model\Bus\Command\CommandResponseInterface;
+use App\Domain\Model\Bus\Query\QueryResponseInterface;
 
-final class AeProductGroupResponse implements CommandResponseInterface
+final class AeProductGroupResponse implements CommandResponseInterface, QueryResponseInterface
 {
     public function __construct(
         private readonly string $id,
-        private readonly int|string $aeProductId,
+        private readonly int|string|null $aeProductId,
         private readonly int $progressStep,
         private readonly int $totalSteps,
     ) {
@@ -21,9 +22,9 @@ final class AeProductGroupResponse implements CommandResponseInterface
         return $this->id;
     }
 
-    public function getAeProductId(): int|string
+    public function getAeProductId(): int|string|null
     {
-        return $this->aeProductId;
+        return is_string($this->aeProductId) ? (int) $this->aeProductId : $this->aeProductId;
     }
 
     public function getProgressStep(): int

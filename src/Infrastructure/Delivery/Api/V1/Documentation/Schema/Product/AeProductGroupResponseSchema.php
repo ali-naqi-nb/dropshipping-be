@@ -2,7 +2,6 @@
 
 namespace App\Infrastructure\Delivery\Api\V1\Documentation\Schema\Product;
 
-use App\Tests\Shared\Factory\AeProductImportFactory;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
@@ -20,9 +19,9 @@ use OpenApi\Attributes as OA;
 final class AeProductGroupResponseSchema
 {
     public const EXAMPLE_DEFAULT = [
-        'id' => AeProductImportFactory::IMPORT_ID,
-        'aeProductId' => AeProductImportFactory::AE_PRODUCT_ID,
-        'progressStep' => AeProductImportFactory::IMPORT_COMPLETED_STEP,
-        'totalSteps' => AeProductImportFactory::IMPORT_TOTAL_STEPS,
+        'id' => "5c1b2dac-f45c-473c-8ee6-887145c7ef60",
+        'aeProductId' => 1005007433426570,
+        'progressStep' => 3,
+        'totalSteps' => 5,
     ];
 }

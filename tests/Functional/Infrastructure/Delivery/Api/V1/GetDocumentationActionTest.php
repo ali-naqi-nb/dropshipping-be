@@ -51,6 +51,9 @@ final class GetDocumentationActionTest extends FunctionalTestCase
                 '/dropshipping/admin/v1/{_locale}/aliexpress-product-group' => [
                     'post' => '@array@',
                 ],
+                '/dropshipping/admin/v1/{_locale}/aliexpress-product-group/{id}' => [
+                    'get' => '@array@',
+                ],
                 '/dropshipping/v1/{_locale}/aliexpress/orders/webhook' => [
                     'post' => '@array@',
                 ],

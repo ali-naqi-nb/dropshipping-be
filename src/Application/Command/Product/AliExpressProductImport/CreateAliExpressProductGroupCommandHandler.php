@@ -32,12 +32,7 @@ final class CreateAliExpressProductGroupCommandHandler
         $aeProductImport = $this->productImportRepository->findOneByAeProductId($product['aeProductId']);
 
         if (null !== $aeProductImport) {
-            return new AeProductGroupResponse(
-                id: $aeProductImport->getId(),
-                aeProductId: $product['aeProductId'],
-                progressStep: $aeProductImport->getCompletedStep(),
-                totalSteps: $aeProductImport->getTotalSteps(),
-            );
+            return ErrorResponse::fromCommonError("Aliexpress Product Group already exist");
         }
 
         $aeProductImport = new AeProductImport(

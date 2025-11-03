@@ -11,16 +11,20 @@ use App\Application\Service\TranslatorInterface;
 use App\Application\Shared\NumberHelper;
 use App\Domain\Model\Bus\Event\EventBusInterface;
 use App\Domain\Model\Language\LanguageServiceInterface;
+use App\Domain\Model\Order\DsCitiesRepositoryInterface;
 use App\Domain\Model\Order\DsOrderConfirmed;
 use App\Domain\Model\Order\DsOrderCreated;
 use App\Domain\Model\Order\DsOrderMapping;
 use App\Domain\Model\Order\DsOrderMappingRepositoryInterface;
 use App\Domain\Model\Order\DsProvider;
+use App\Domain\Model\Order\DsProvincesRepositoryInterface;
 use App\Domain\Model\Product\AeProductImportProductRepositoryInterface;
 use App\Domain\Model\Product\DsProduct;
 use App\Domain\Model\Product\DsProductUpdated;
 use App\Domain\Model\Tenant\Tenant;
 use App\Domain\Model\Tenant\TenantRepositoryInterface;
+use App\Infrastructure\Domain\Model\Order\DsCityData;
+use App\Infrastructure\Domain\Model\Order\DsProvinceData;
 use Psr\Log\LoggerInterface;
 
 final class DsOrderCreatedHandler
@@ -35,6 +39,8 @@ final class DsOrderCreatedHandler
         private readonly LanguageServiceInterface $languageService,
         private readonly CountryServiceInterface $countryService,
         private readonly TranslatorInterface $translator,
+        private readonly DsProvincesRepositoryInterface $provincesRepository,
+        private readonly DsCitiesRepositoryInterface $citiesRepository,
     ) {
     }
 
@@ -174,18 +180,25 @@ final class DsOrderCreatedHandler
     ): array {
         $countryCode = $this->countryService->convertThreeToTwoLetterCountryCode($shippingAddress['country']);
 
+        // Get validated province and city from AliExpress
+        $validatedAddress = $this->validateAddressForAliExpress(
+            $countryCode,
+            $shippingAddress['province'] ?? $shippingAddress['city'],
+            $shippingAddress['city']
+        );
+
         $postData = [
             'logistics_address' => [
                 'address' => $shippingAddress['address'],
                 'address2' => $shippingAddress['addressAdditions'],
-                'city' => $shippingAddress['city'],
+                'province' => $validatedAddress['province'],
+                'city' => $validatedAddress['city'],
                 'contact_person' => "{$shippingAddress['firstName']} {$shippingAddress['lastName']}",
                 'country' => $countryCode,
                 'full_name' => "{$shippingAddress['firstName']} {$shippingAddress['lastName']}",
                 'locale' => $this->translator->getLocale(),
                 'mobile_no' => AeUtil::formatPhoneNumber($shippingAddress['phone']),
                 'phone_country' => AeUtil::getPhoneCountryCode($countryCode),
-                'province' => $shippingAddress['area'],
                 'zip' => $shippingAddress['postCode'],
                 'vat_no' => $shippingAddress['companyVat'],
                 'tax_company' => $shippingAddress['companyName'],
@@ -214,6 +227,136 @@ final class DsOrderCreatedHandler
         }
 
         return $postData;
+    }
+
+    /**
+     * Validates province and city against AliExpress getAddress API
+     * Returns validated province and city, using alternatives if originals don't exist
+     * Uses Redis caching to store provinces and cities for better performance.
+     */
+    private function validateAddressForAliExpress(
+        string $countryCode,
+        ?string $province,
+        string $city
+    ): array {
+        $cachedProvinces = $this->provincesRepository->find($countryCode, $province);
+        $cachedCities = $this->citiesRepository->find($countryCode, $city);
+
+        // If cache exists, use it
+        if (null !== $cachedProvinces && null !== $cachedCities) {
+            return $this->extractValidatedLocationFromCache($cachedProvinces, $cachedCities);
+        }
+
+        // Cache miss - fetch from API
+        $addressData = $this->dropshipperService->getAddress(
+            $countryCode,
+            $this->translator->getLocale()
+        );
+
+        // If API call fails, use fallback logic
+        if (null === $addressData) {
+            return [
+                'province' => $province,
+                'city' => $city,
+            ];
+        }
+
+        // Parse and cache the address data
+        [$provincesData, $citiesData] = $this->parseAndCacheAddressData($addressData, $countryCode);
+
+        // If parsing failed, use fallback
+        if (empty($provincesData) && empty($citiesData)) {
+            return [
+                'province' => $province,
+                'city' => $city,
+            ];
+        }
+
+        return $this->extractValidatedLocationFromCache($provincesData, $citiesData);
+    }
+
+    /**
+     * Parse address data from API response and cache it in Redis.
+     *
+     * @return array{0: DsProvinceData[], 1: DsCityData[]}
+     */
+    private function parseAndCacheAddressData(array $addressData, string $countryCode): array
+    {
+        $provincesData = [];
+        $citiesData = [];
+
+        // Parse the children field which contains a JSON string
+        if (!isset($addressData['children']) || !is_string($addressData['children'])) {
+            return [$provincesData, $citiesData];
+        }
+
+        $children = json_decode($addressData['children'], true);
+
+        if (!is_array($children)) {
+            return [$provincesData, $citiesData];
+        }
+
+        foreach ($children as $provinceData) {
+            // Check if this is a province type
+            if (!isset($provinceData['type']) || 'PROVINCE' !== $provinceData['type']) {
+                continue;
+            }
+
+            $provinceName = $provinceData['name'] ?? null;
+            if (!$provinceName) {
+                continue;
+            }
+
+            // Add province to the list
+            $provincesData[] = new DsProvinceData($provinceName, $countryCode);
+
+            // Extract cities from the province's children
+            if (!isset($provinceData['children']) || !is_array($provinceData['children'])) {
+                continue;
+            }
+
+            foreach ($provinceData['children'] as $cityData) {
+                if (!isset($cityData['type']) || 'CITY' !== $cityData['type']) {
+                    continue;
+                }
+
+                $cityName = $cityData['name'] ?? null;
+                if ($cityName) {
+                    $citiesData[] = new DsCityData($cityName, $countryCode);
+                }
+            }
+        }
+
+        // Cache the parsed data in Redis
+        if (!empty($provincesData)) {
+            $this->provincesRepository->save($countryCode, $provincesData);
+        }
+
+        if (!empty($citiesData)) {
+            $this->citiesRepository->save($countryCode, $citiesData);
+        }
+
+        return [$provincesData, $citiesData];
+    }
+
+    private function extractValidatedLocationFromCache(
+        array $cachedProvinces,
+        array $cachedCities
+    ): array {
+        $provinces = array_map(
+            static fn (DsProvinceData $province) => trim($province->getProvinceName()),
+            $cachedProvinces
+        );
+
+        $cities = array_map(
+            static fn (DsCityData $city) => trim($city->getCityName()),
+            $cachedCities
+        );
+
+        return [
+            'province' => $provinces[0] ?? 'Other',
+            'city' => $cities[0] ?? 'Other',
+        ];
     }
 
     private function logError(string $message, DsOrderCreated $event, array $context = []): void

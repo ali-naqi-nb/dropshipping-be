@@ -258,6 +258,30 @@ final class DropshipperService implements DropshipperServiceInterface
         return $data;
     }
 
+    public function getAddress(
+        string $countryCode,
+        string $language
+    ): ?array {
+        $request = [
+            'countryCode' => $countryCode,
+            'language' => $language,
+        ];
+
+        $response = $this->makeRequest('aliexpress.ds.address.get', $request);
+
+        $data = $response['result']['data'] ?? null;
+
+        if (null === $data) {
+            $this->logger->error('AliExpress request failed.', [
+                'method' => 'aliexpress.ds.address.get',
+                'parameters' => $request,
+                'response' => $response,
+            ]);
+        }
+
+        return $data;
+    }
+
     /**
      * @throws TenantIdException
      * @throws AliexpressAccessTokenManagerException

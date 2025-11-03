@@ -93,4 +93,28 @@ final class DoctrineTenantRepository implements TenantRepositoryInterface
         $this->entityManager->remove($tenant);
         $this->entityManager->flush();
     }
+
+    public function findTenantsWithAppInstalled(AppId $appId, int $chunk, int $chunkSize = self::CHUNK_SIZE): array
+    {
+        $offset = $chunk * $chunkSize;
+        $appValue = $appId->value;
+        $path = '$."' . $appValue . '"';
+
+        /** @var Tenant[] $tenants */
+        $tenants = $this->entityManager->createQueryBuilder()
+            ->select('t')
+            ->from(Tenant::class, 't')
+            ->where("JSON_EXTRACT(t.apps, '$path') IS NOT NULL")
+            ->andWhere('t.deletedAt IS NULL')
+            ->andWhere('t.isAvailable = :available')
+            ->setParameter('available', true)
+            ->orderBy('t.id', 'ASC')
+            ->setMaxResults($chunkSize)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+
+        // Filter to ensure app is actually installed (not just present)
+        return array_filter($tenants, fn(Tenant $tenant) => $tenant->isAppInstalled($appId));
+    }
 }

@@ -42,6 +42,15 @@ final class DsProductGroupImportedEventHandler
             }
 
             $productImportProduct->setNbProductId($product['productId']);
+
+            // Set shipping option data from the original group data
+            $shippingOption = $this->getShippingOption($groupData['products'], $product['dsVariantId']);
+            if (null !== $shippingOption) {
+                $productImportProduct->setAeFreightCode($shippingOption['code']);
+                $productImportProduct->setAeShippingFee($shippingOption['shippingFeePrice']);
+                $productImportProduct->setAeShippingFeeCurrency($shippingOption['shippingFeeCurrency']);
+            }
+
             $this->productImportProductRepository->save($productImportProduct);
             $productsForImport[] = [
                 'dsVariantId' => $product['dsVariantId'],
@@ -74,5 +83,16 @@ final class DsProductGroupImportedEventHandler
         }
 
         return [];
+    }
+
+    private function getShippingOption(array $productsInGroup, string $aeSkuId): ?array
+    {
+        foreach ($productsInGroup as $product) {
+            if ((string) $product['aeSkuId'] === (string) $aeSkuId) {
+                return $product['shippingOption'] ?? null;
+            }
+        }
+
+        return null;
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\EventHandler\Product;
 
 use App\Application\Service\ProductServiceInterface;
+use App\Domain\Model\Order\DsProvider;
 use App\Domain\Model\Product\AeProductImportRepositoryInterface;
 use App\Domain\Model\Product\DsAttributesImported;
 use Psr\Log\LoggerInterface;
@@ -33,8 +34,9 @@ final class DsAttributesImportedEventHandler
         for ($i = 0; $i < count($products); ++$i) {
             $products[$i]['productTypeId'] = $command->getProductTypeId();
             $products[$i]['dsVariantId'] = (string) $products[$i]['aeSkuId'];
-            $products[$i]['dsProvider'] = 'Aliexpress';
+            $products[$i]['dsProvider'] = DsProvider::AliExpress;
             $products[$i]['attributes'] = $command->getAttributes();
+            unset($products[$i]['shippingOption']);
         }
 
         $this->productService->sendDsProductGroupImport(

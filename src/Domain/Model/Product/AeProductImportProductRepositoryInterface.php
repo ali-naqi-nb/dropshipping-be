@@ -17,4 +17,19 @@ interface AeProductImportProductRepositoryInterface
     public function save(AeProductImportProduct $importProduct): void;
 
     public function delete(AeProductImportProduct $importProduct): void;
+
+    /**
+     * Get all distinct AliExpress product IDs that have been imported and linked to NextBasket products.
+     * Only returns product IDs where nbProductId is not null.
+     *
+     * @return array<int>
+     */
+    public function findAllDistinctAeProductIds(?int $limit = null): array;
+
+    /**
+     * Find all variants for a given AliExpress product ID.
+     *
+     * @return array<AeProductImportProduct>
+     */
+    public function findAllByAeProductId(int|string $aeProductId): array;
 }

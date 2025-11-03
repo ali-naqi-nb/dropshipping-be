@@ -201,4 +201,114 @@ final class DropshipperServiceTest extends IntegrationTestCase
 
         $this->assertNull($result);
     }
+
+    public function testGetAddressWithMockedResponse(): void
+    {
+        $mockResponse = [
+            'aliexpress_ds_address_get_response' => [
+                'result' => [
+                    'data' => [
+                        'country' => 'NG',
+                        'children' => json_encode([
+                            [
+                                'name' => 'Lagos State',
+                                'type' => 'PROVINCE',
+                                'hasChildren' => true,
+                                'children' => [
+                                    ['name' => 'Lagos', 'type' => 'CITY', 'hasChildren' => false],
+                                    ['name' => 'Ikeja', 'type' => 'CITY', 'hasChildren' => false],
+                                    ['name' => 'Other', 'type' => 'CITY', 'hasChildren' => false],
+                                ],
+                            ],
+                            [
+                                'name' => 'Rivers State',
+                                'type' => 'PROVINCE',
+                                'hasChildren' => true,
+                                'children' => [
+                                    ['name' => 'Port Harcourt', 'type' => 'CITY', 'hasChildren' => false],
+                                    ['name' => 'Other', 'type' => 'CITY', 'hasChildren' => false],
+                                ],
+                            ],
+                        ]),
+                    ],
+                ],
+            ],
+        ];
+
+        $loggerMock = $this->createMock(LoggerInterface::class);
+        $tenantStorageMock = $this->createMock(TenantStorageInterface::class);
+        $tokenManagerMock = $this->createMock(AliexpressAccessTokenManager::class);
+        $httpClientMock = $this->createMock(HttpClientInterface::class);
+
+        $httpClientMock->method('request')->willReturn($this->createMockHttpResponse(200, $mockResponse));
+        $tenantStorageMock->method('getId')->willReturn('valid_tenant_id');
+        $tokenManagerMock->method('getAccessToken')->willReturn('valid_access_token');
+
+        $dropshipperServiceMock = new DropshipperService(
+            'app_key',
+            'app_secret',
+            $tenantStorageMock,
+            $tokenManagerMock,
+            $httpClientMock,
+            $loggerMock
+        );
+
+        $result = $dropshipperServiceMock->getAddress('NG', 'en_US');
+
+        $this->assertNotNull($result);
+        $this->assertArrayHasKey('country', $result);
+        $this->assertEquals('NG', $result['country']);
+        $this->assertArrayHasKey('children', $result);
+
+        // Decode and verify structure
+        $children = json_decode($result['children'], true);
+        $this->assertCount(2, $children);
+        $this->assertEquals('Lagos State', $children[0]['name']);
+        $this->assertCount(3, $children[0]['children']);
+        $this->assertEquals('Rivers State', $children[1]['name']);
+        $this->assertCount(2, $children[1]['children']);
+    }
+
+    public function testGetAddressFailureLogsError(): void
+    {
+        $mockResponse = [
+            'aliexpress_ds_address_get_response' => [
+                'result' => null,
+            ],
+        ];
+
+        $loggerMock = $this->createMock(LoggerInterface::class);
+        $tenantStorageMock = $this->createMock(TenantStorageInterface::class);
+        $tokenManagerMock = $this->createMock(AliexpressAccessTokenManager::class);
+        $httpClientMock = $this->createMock(HttpClientInterface::class);
+
+        $httpClientMock->method('request')->willReturn($this->createMockHttpResponse(200, $mockResponse));
+        $tenantStorageMock->method('getId')->willReturn('valid_tenant_id');
+        $tokenManagerMock->method('getAccessToken')->willReturn('valid_access_token');
+
+        $dropshipperServiceMock = new DropshipperService(
+            'app_key',
+            'app_secret',
+            $tenantStorageMock,
+            $tokenManagerMock,
+            $httpClientMock,
+            $loggerMock
+        );
+
+        $loggerMock->expects($this->atLeastOnce())
+            ->method('error')
+            ->with(
+                'AliExpress request failed.',
+                $this->callback(function ($context) {
+                    return isset($context['method'])
+                        && 'aliexpress.ds.address.get' === $context['method']
+                        && isset($context['parameters'])
+                        && isset($context['response']);
+                })
+            );
+
+        $result = $dropshipperServiceMock->getAddress('NG', 'en_US');
+
+        $this->assertNull($result);
+    }
 }

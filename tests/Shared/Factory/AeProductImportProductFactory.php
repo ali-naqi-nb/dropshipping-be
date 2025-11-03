@@ -116,6 +116,7 @@ final class AeProductImportProductFactory
         'aeProductId' => '@integer@',
         'aeSkuId' => '@integer@',
         'aeProductName' => '@string@',
+        'variantName' => '@string@||@null@',
         'aeProductCategoryName' => '@string@',
         'aeSkuStock' => '@integer@',
         'aeSkuPrice' => '@integer@',

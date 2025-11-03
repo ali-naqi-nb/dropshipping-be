@@ -19,12 +19,21 @@ final class AeProductImportResponseAssembler
      */
     public function assembleAeProductResponse(array $importProducts, array $aeDeliveryOptions): AeProductImportResponse
     {
-        $responses = array_map(function (AeProductImportProduct $importProduct) use ($aeDeliveryOptions) {
-            return $this->responseMapper->getResponse(
+        $responses = [];
+
+        foreach ($importProducts as $importProduct) {
+            $deliveryOptions = $aeDeliveryOptions[$importProduct->getAeSkuId()] ?? null;
+
+            // Skip products that don't have delivery options
+            if (null === $deliveryOptions || empty($deliveryOptions)) {
+                continue;
+            }
+
+            $responses[] = $this->responseMapper->getResponse(
                 importProduct: $importProduct,
-                aeDeliveryOptions: $aeDeliveryOptions[$importProduct->getAeSkuId()] ?? null
+                aeDeliveryOptions: $deliveryOptions
             );
-        }, $importProducts);
+        }
 
         return new AeProductImportResponse($responses);
     }

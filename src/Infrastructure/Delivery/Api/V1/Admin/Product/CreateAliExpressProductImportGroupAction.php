@@ -37,7 +37,7 @@ final class CreateAliExpressProductImportGroupAction
                         type: 'array',
                         items: new OA\Items(
                             description: 'Product data',
-                            required: ['aeProductId', 'aeSkuId', 'name', 'description', 'sku', 'price', 'mainCategoryId', 'additionalCategories', 'stock', 'barcode', 'weight', 'length', 'width', 'height', 'costPerItem', 'productTypeName', 'attributes', 'images'],
+                            required: ['aeProductId', 'aeSkuId', 'name', 'description', 'sku', 'price', 'mainCategoryId', 'additionalCategories', 'stock', 'barcode', 'weight', 'length', 'width', 'height', 'costPerItem', 'productTypeName', 'attributes', 'images', 'shippingOption'],
                             properties: [
                                 new OA\Property(property: 'aeProductId', type: 'int'),
                                 new OA\Property(property: 'aeSkuId', type: 'int'),
@@ -64,6 +64,15 @@ final class CreateAliExpressProductImportGroupAction
                                     ]
                                 )),
                                 new OA\Property(property: 'images', type: 'array', items: new OA\Items(type: 'string')),
+                                new OA\Property(property: 'shippingOption', type: 'object', required: ['code', 'shipsFrom', 'minDeliveryDays', 'maxDeliveryDays', 'shippingFeePrice', 'shippingFeeCurrency', 'isFreeShipping'], properties: [
+                                    new OA\Property(property: 'code', type: 'string'),
+                                    new OA\Property(property: 'shipsFrom', type: 'string'),
+                                    new OA\Property(property: 'minDeliveryDays', type: 'int'),
+                                    new OA\Property(property: 'maxDeliveryDays', type: 'int'),
+                                    new OA\Property(property: 'shippingFeePrice', type: 'int'),
+                                    new OA\Property(property: 'shippingFeeCurrency', type: 'string'),
+                                    new OA\Property(property: 'isFreeShipping', type: 'bool'),
+                                ]),
                             ]
                         )
                     ),

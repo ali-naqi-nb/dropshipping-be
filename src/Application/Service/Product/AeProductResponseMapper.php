@@ -11,14 +11,12 @@ use App\Domain\Model\Product\AeProductImportProduct;
 final class AeProductResponseMapper
 {
     /**
-     * @param ?array<array<string, mixed>> $aeDeliveryOptions
+     * @param array<array<string, mixed>> $aeDeliveryOptions
      */
     public function getResponse(
         AeProductImportProduct $importProduct,
-        ?array $aeDeliveryOptions,
+        array $aeDeliveryOptions,
     ): AeProductResponse {
-        $aeDeliveryOptions = $aeDeliveryOptions ?? [];
-
         $shippingOptionResponses = array_map(
             fn (array $aeDeliveryOption) => AeShippingOptionResponse::fromAeDeliveryOption($aeDeliveryOption),
             $aeDeliveryOptions

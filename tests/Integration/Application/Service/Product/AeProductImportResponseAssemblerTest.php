@@ -60,4 +60,25 @@ final class AeProductImportResponseAssemblerTest extends IntegrationTestCase
         $this->assertSame(AeUtil::toBase100($skuDeliveryOptions[Factory::AE_SKU_ID][0]['shipping_fee_cent']), $response->getItems()[0]->getAeProductShippingOptions()[0]->getShippingFeePrice());
         $this->assertSame($skuDeliveryOptions[Factory::AE_SKU_ID][0]['shipping_fee_currency'], $response->getItems()[0]->getAeProductShippingOptions()[0]->getShippingFeeCurrency());
     }
+
+    public function testAssembleAeProductResponseFiltersProductsWithoutDeliveryOptions(): void
+    {
+        $aeProduct1 = Factory::createAeProductImportProduct();
+        $aeProduct2 = Factory::createAeProductImportProduct(aeSkuId: Factory::AE_SKU_ID + 1);
+        $aeProduct3 = Factory::createAeProductImportProduct(aeSkuId: Factory::AE_SKU_ID + 2);
+
+        $aeDeliveryOptions = [Factory::createAeDeliveryOption()];
+
+        $aeProducts = [$aeProduct1, $aeProduct2, $aeProduct3];
+        $skuDeliveryOptions = [
+            Factory::AE_SKU_ID => $aeDeliveryOptions,      
+            Factory::AE_SKU_ID + 1 => [],
+            Factory::AE_SKU_ID + 2 => []
+        ];
+
+        $response = $this->assembler->assembleAeProductResponse($aeProducts, $skuDeliveryOptions);
+
+        $this->assertCount(1, $response->getItems());
+        $this->assertSame($aeProduct1->getAeSkuId(), $response->getItems()[0]->getAeSkuId());
+    }
 }

@@ -42,6 +42,15 @@ final class CreateAliexpressProductGroupValidatorTest extends IntegrationTestCas
             'https://example.com/image1.jpg',
             'https://example.com/image2.jpg',
         ],
+        'shippingOption' => [
+            'code' => 'CAINIAO_STANDARD',
+            'shipsFrom' => 'CN',
+            'minDeliveryDays' => 15,
+            'maxDeliveryDays' => 30,
+            'shippingFeePrice' => 500,
+            'shippingFeeCurrency' => 'USD',
+            'isFreeShipping' => false,
+        ],
     ];
 
     protected function setUp(): void
@@ -106,6 +115,40 @@ final class CreateAliexpressProductGroupValidatorTest extends IntegrationTestCas
                     'products' => [
                         array_merge(self::VALID_PRODUCT, [
                             'additionalCategories' => [],
+                        ]),
+                    ],
+                ],
+            ],
+            'valid product with free shipping' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => [
+                                'code' => 'FREE_SHIPPING',
+                                'shipsFrom' => 'US',
+                                'minDeliveryDays' => 5,
+                                'maxDeliveryDays' => 10,
+                                'shippingFeePrice' => 0,
+                                'shippingFeeCurrency' => 'USD',
+                                'isFreeShipping' => true,
+                            ],
+                        ]),
+                    ],
+                ],
+            ],
+            'valid product with zero delivery days' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => [
+                                'code' => 'EXPRESS',
+                                'shipsFrom' => 'CN',
+                                'minDeliveryDays' => 0,
+                                'maxDeliveryDays' => 0,
+                                'shippingFeePrice' => 0,
+                                'shippingFeeCurrency' => 'EUR',
+                                'isFreeShipping' => false,
+                            ],
                         ]),
                     ],
                 ],
@@ -520,6 +563,172 @@ final class CreateAliexpressProductGroupValidatorTest extends IntegrationTestCas
                 ],
                 [
                     ['path' => 'products.0.images.0', 'message' => 'This value should not be blank.'],
+                ],
+            ],
+            'missing shippingOption' => [
+                [
+                    'products' => [
+                        array_diff_key(self::VALID_PRODUCT, array_flip(['shippingOption'])),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption', 'message' => 'This field is missing.'],
+                ],
+            ],
+            'missing shippingOption code' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_diff_key(self::VALID_PRODUCT['shippingOption'], array_flip(['code'])),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.code', 'message' => 'This field is missing.'],
+                ],
+            ],
+            'blank shippingOption code' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['code' => '']),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.code', 'message' => 'This value should not be blank.'],
+                ],
+            ],
+            'missing shippingOption shipsFrom' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_diff_key(self::VALID_PRODUCT['shippingOption'], array_flip(['shipsFrom'])),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.shipsFrom', 'message' => 'This field is missing.'],
+                ],
+            ],
+            'blank shippingOption shipsFrom' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['shipsFrom' => '']),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.shipsFrom', 'message' => 'This value should not be blank.'],
+                ],
+            ],
+            'non-integer minDeliveryDays' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['minDeliveryDays' => '15']),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.minDeliveryDays', 'message' => 'This value should be of type integer.'],
+                ],
+            ],
+            'negative minDeliveryDays' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['minDeliveryDays' => -5]),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.minDeliveryDays', 'message' => 'This value should be either positive or zero.'],
+                ],
+            ],
+            'non-integer maxDeliveryDays' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['maxDeliveryDays' => '30']),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.maxDeliveryDays', 'message' => 'This value should be of type integer.'],
+                ],
+            ],
+            'negative maxDeliveryDays' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['maxDeliveryDays' => -10]),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.maxDeliveryDays', 'message' => 'This value should be either positive or zero.'],
+                ],
+            ],
+            'non-integer shippingFeePrice' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['shippingFeePrice' => '500']),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.shippingFeePrice', 'message' => 'This value should be of type integer.'],
+                ],
+            ],
+            'negative shippingFeePrice' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['shippingFeePrice' => -100]),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.shippingFeePrice', 'message' => 'This value should be either positive or zero.'],
+                ],
+            ],
+            'missing shippingFeeCurrency' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_diff_key(self::VALID_PRODUCT['shippingOption'], array_flip(['shippingFeeCurrency'])),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.shippingFeeCurrency', 'message' => 'This field is missing.'],
+                ],
+            ],
+            'blank shippingFeeCurrency' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['shippingFeeCurrency' => '']),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.shippingFeeCurrency', 'message' => 'This value should not be blank.'],
+                ],
+            ],
+            'non-boolean isFreeShipping' => [
+                [
+                    'products' => [
+                        array_merge(self::VALID_PRODUCT, [
+                            'shippingOption' => array_merge(self::VALID_PRODUCT['shippingOption'], ['isFreeShipping' => 'true']),
+                        ]),
+                    ],
+                ],
+                [
+                    ['path' => 'products.0.shippingOption.isFreeShipping', 'message' => 'This value should be of type bool.'],
                 ],
             ],
         ];

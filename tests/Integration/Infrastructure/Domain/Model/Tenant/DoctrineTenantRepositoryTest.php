@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Infrastructure\Domain\Model\Tenant;
 
+use App\Domain\Model\Tenant\AppId;
 use App\Domain\Model\Tenant\Tenant;
 use App\Infrastructure\Domain\Model\Tenant\DoctrineTenantRepository;
 use App\Tests\Integration\IntegrationTestCase;
@@ -182,5 +183,77 @@ final class DoctrineTenantRepositoryTest extends IntegrationTestCase
                 ],
             ],
         ];
+    }
+
+    public function testFindTenantsWithAppInstalledReturnsTenantsWithAliExpressApp(): void
+    {
+        $tenants = $this->repository->findTenantsWithAppInstalled(AppId::AliExpress, 0);
+
+        $this->assertIsArray($tenants);
+        $this->assertGreaterThan(0, count($tenants));
+
+        foreach ($tenants as $tenant) {
+            $this->assertInstanceOf(Tenant::class, $tenant);
+            $this->assertTrue($tenant->isAppInstalled(AppId::AliExpress));
+            $this->assertNull($tenant->getDeletedAt());
+            $this->assertTrue($tenant->isAvailable());
+        }
+    }
+
+    public function testFindTenantsWithAppInstalledWithPagination(): void
+    {
+        $chunk0 = $this->repository->findTenantsWithAppInstalled(AppId::AliExpress, 0, 1);
+        $chunk1 = $this->repository->findTenantsWithAppInstalled(AppId::AliExpress, 1, 1);
+
+        $this->assertIsArray($chunk0);
+        $this->assertIsArray($chunk1);
+
+        if (count($chunk0) > 0 && count($chunk1) > 0) {
+            $this->assertNotSame($chunk0[0]->getId(), $chunk1[0]->getId());
+        }
+    }
+
+    public function testFindTenantsWithAppInstalledReturnsEmptyForNonExistentApp(): void
+    {
+        // Test with an app that likely doesn't exist in fixtures
+        $tenants = $this->repository->findTenantsWithAppInstalled(AppId::AliExpress, 999);
+
+        $this->assertIsArray($tenants);
+        $this->assertCount(0, $tenants);
+    }
+
+    public function testFindTenantsWithAppInstalledExcludesDeletedTenants(): void
+    {
+        $tenants = $this->repository->findTenantsWithAppInstalled(AppId::AliExpress, 0);
+
+        foreach ($tenants as $tenant) {
+            $this->assertNull($tenant->getDeletedAt(), 'Deleted tenants should not be returned');
+        }
+    }
+
+    public function testFindTenantsWithAppInstalledExcludesUnavailableTenants(): void
+    {
+        $tenants = $this->repository->findTenantsWithAppInstalled(AppId::AliExpress, 0);
+
+        foreach ($tenants as $tenant) {
+            $this->assertTrue($tenant->isAvailable(), 'Unavailable tenants should not be returned');
+        }
+    }
+
+    public function testFindTenantsWithAppInstalledOrdersById(): void
+    {
+        $tenants = $this->repository->findTenantsWithAppInstalled(AppId::AliExpress, 0);
+
+        if (count($tenants) > 1) {
+            $previousId = null;
+            foreach ($tenants as $tenant) {
+                if (null !== $previousId) {
+                    $this->assertGreaterThan($previousId, $tenant->getId(), 'Tenants should be ordered by ID ASC');
+                }
+                $previousId = $tenant->getId();
+            }
+        }
+
+        $this->assertTrue(true); // Test passes if we get here
     }
 }

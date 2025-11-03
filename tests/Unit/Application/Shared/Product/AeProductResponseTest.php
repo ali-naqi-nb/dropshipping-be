@@ -30,6 +30,7 @@ final class AeProductResponseTest extends UnitTestCase
         $this->assertSame($aeProduct->getAeProductId(), $response->getAeProductId());
         $this->assertSame($aeProduct->getAeSkuId(), $response->getAeSkuId());
         $this->assertSame($aeProduct->getAeProductName(), $response->getAeProductName());
+        $this->assertSame($aeAttributes[0]->getAeAttributeValue(), $response->getVariantName());
         $this->assertSame($aeProduct->getAeProductCategoryName(), $response->getAeProductCategoryName());
         $this->assertSame($aeProduct->getAeProductStock(), $response->getAeSkuStock());
         $this->assertSame($aeProduct->getAeSkuPrice(), $response->getAeSkuPrice());
@@ -47,5 +48,20 @@ final class AeProductResponseTest extends UnitTestCase
         $this->assertSame($shippingOptionResponse[0]->getMinDeliveryDays(), $response->getAeProductShippingOptions()[0]->getMinDeliveryDays());
         $this->assertSame($shippingOptionResponse[0]->getShippingFeePrice(), $response->getAeProductShippingOptions()[0]->getShippingFeePrice());
         $this->assertSame($shippingOptionResponse[0]->getShippingFeeCurrency(), $response->getAeProductShippingOptions()[0]->getShippingFeeCurrency());
+    }
+
+    public function testFromAeProductWithoutVariants(): void
+    {
+        $aeProduct = Factory::createAeProductImportProduct();
+        /** @var array<string, bool> $images */
+        $images = [Factory::AE_IMAGE_URL => false];
+
+        $aeProduct->setAeVariantAttributes([]);
+        $aeProduct->setAeProductImageUrls($images);
+
+        $response = AeProductResponse::fromAeProduct($aeProduct, []);
+
+        $this->assertSame($aeProduct->getAeProductName(), $response->getAeProductName());
+        $this->assertNull($response->getVariantName());
     }
 }

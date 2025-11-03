@@ -58,7 +58,7 @@ final class RefreshTokenAppCommandHandler
 
                 return $this->responseMapper->getResponse($updatedApp);
             } catch (AliexpressAccessTokenManagerException $exception) {
-                return ErrorResponse::fromCommonError($this->translator->trans('Failed to refresh access token.'));
+                return ErrorResponse::fromCommonError($this->translator->trans($exception->getMessage()));
             }
         }
 

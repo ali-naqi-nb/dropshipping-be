@@ -7,6 +7,7 @@ namespace App\Tests\Integration\Application\Command\Product;
 use App\Application\Command\Product\AliExpressProductImport\CreateAliExpressProductGroupCommand;
 use App\Application\Command\Product\AliExpressProductImport\CreateAliExpressProductGroupCommandHandler;
 use App\Application\Service\ProductServiceInterface;
+use App\Application\Shared\Error\ErrorResponse;
 use App\Application\Shared\Product\AeProductGroupResponse;
 use App\Domain\Model\Product\AeProductImport;
 use App\Domain\Model\Product\AeProductImportRepositoryInterface;
@@ -81,6 +82,15 @@ final class CreateAliExpressProductGroupCommandHandlerTest extends IntegrationTe
             'productTypeName' => AeProductImportProductFactory::PRODUCT_TYPE_NAME,
             'attributes' => AeProductImportFactory::ATTRIBUTES,
             'images' => [AeProductImportProductFactory::AE_IMAGE_URL],
+            'shippingOption' => [
+                'code' => 'CAINIAO_STANDARD',
+                'shipsFrom' => 'CN',
+                'minDeliveryDays' => 15,
+                'maxDeliveryDays' => 30,
+                'shippingFeePrice' => 500,
+                'shippingFeeCurrency' => 'USD',
+                'isFreeShipping' => false,
+            ],
         ];
 
         $command = new CreateAliExpressProductGroupCommand(products: [$productArr]);
@@ -117,12 +127,22 @@ final class CreateAliExpressProductGroupCommandHandlerTest extends IntegrationTe
             'productTypeName' => AeProductImportProductFactory::PRODUCT_TYPE_NAME,
             'attributes' => AeProductImportFactory::ATTRIBUTES,
             'images' => [AeProductImportProductFactory::AE_IMAGE_URL],
+            'shippingOption' => [
+                'code' => 'CAINIAO_STANDARD',
+                'shipsFrom' => 'CN',
+                'minDeliveryDays' => 15,
+                'maxDeliveryDays' => 30,
+                'shippingFeePrice' => 500,
+                'shippingFeeCurrency' => 'USD',
+                'isFreeShipping' => false,
+            ],
         ];
 
         $command = new CreateAliExpressProductGroupCommand(products: [$productArr]);
 
         $response = $this->handler->__invoke($command);
 
-        $this->assertInstanceOf(AeProductGroupResponse::class, $response);
+        $this->assertInstanceOf(ErrorResponse::class, $response);
+        $this->assertSame(['common' => 'Aliexpress Product Group already exist'], $response->getErrors());
     }
 }

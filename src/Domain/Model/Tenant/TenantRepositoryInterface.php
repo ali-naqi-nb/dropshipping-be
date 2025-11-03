@@ -27,4 +27,11 @@ interface TenantRepositoryInterface
     public function save(Tenant $tenant): void;
 
     public function remove(Tenant $tenant): void;
+
+    /**
+     * Find all tenants that have a specific app installed and active.
+     *
+     * @return Tenant[]
+     */
+    public function findTenantsWithAppInstalled(AppId $appId, int $chunk, int $chunkSize = self::CHUNK_SIZE): array;
 }

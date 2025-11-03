@@ -69,4 +69,29 @@ final class DoctrineAeProductImportProductRepository implements AeProductImportP
         $this->entityManager->remove($importProduct);
         $this->entityManager->flush();
     }
+
+    public function findAllDistinctAeProductIds(?int $limit = null): array
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('DISTINCT p.aeProductId')
+            ->from(AeProductImportProduct::class, 'p')
+            ->where('p.nbProductId IS NOT NULL')
+            ->orderBy('p.aeProductId', 'ASC');
+
+        if (null !== $limit) {
+            $qb->setMaxResults($limit);
+        }
+
+        $result = $qb->getQuery()->getScalarResult();
+
+        return array_map(fn(array $row) => (int)$row['aeProductId'], $result);
+    }
+
+    public function findAllByAeProductId(int|string $aeProductId): array
+    {
+        /** @var AeProductImportProduct[] $products */
+        $products = $this->repository->findBy(['aeProductId' => $aeProductId]);
+
+        return $products;
+    }
 }

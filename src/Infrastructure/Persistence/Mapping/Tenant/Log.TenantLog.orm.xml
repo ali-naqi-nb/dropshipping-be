@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                   https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+    <entity name="App\Domain\Model\Log\TenantLog" table="periodic_logs">
+        <id name="id" type="bigint">
+            <generator strategy="AUTO"/>
+        </id>
+        <field name="level" type="string" length="20" nullable="false"/>
+        <field name="message" type="text" nullable="false"/>
+        <field name="context" type="json" nullable="true"/>
+        <field name="channel" type="string" length="50" nullable="true"/>
+        <field name="source" type="string" length="255" nullable="true"/>
+        <field name="userId" column="user_id" type="string" length="36" nullable="true"/>
+        <field name="requestId" column="request_id" type="string" length="36" nullable="true"/>
+        <field name="stackTrace" column="stack_trace" type="text" nullable="true"/>
+        <field name="createdAt" column="created_at" type="datetime" nullable="false"/>
+        <indexes>
+            <index name="idx_level" columns="level"/>
+            <index name="idx_channel" columns="channel"/>
+            <index name="idx_user_id" columns="user_id"/>
+            <index name="idx_request_id" columns="request_id"/>
+            <index name="idx_created_at" columns="created_at"/>
+            <index name="idx_level_created_at" columns="level,created_at"/>
+        </indexes>
+    </entity>
+</doctrine-mapping>

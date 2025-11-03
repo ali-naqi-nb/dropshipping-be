@@ -59,7 +59,7 @@ final class AuthorizeAppCommandHandler
 
                 return $this->responseMapper->getResponse($updatedApp);
             } catch (AliexpressAccessTokenManagerException $exception) {
-                return ErrorResponse::fromCommonError($this->translator->trans('Failed to get access token.'));
+                return ErrorResponse::fromCommonError($this->translator->trans($exception->getMessage()));
             }
         }
 

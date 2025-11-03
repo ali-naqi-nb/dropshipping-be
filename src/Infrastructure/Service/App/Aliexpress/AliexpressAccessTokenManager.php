@@ -150,16 +150,17 @@ final class AliexpressAccessTokenManager implements AppAccessTokenManagerInterfa
             $data = $response->toArray();
 
             if (isset($data['code']) && '0' !== $data['code']) {
+                $response = $response->toArray();
                 $this->logger->error('Token exchange failed', [
                     'body' => $body,
-                    'response' => $response->getContent(),
+                    'response' => $response,
                 ]);
-                throw new AliexpressAccessTokenManagerException('Non-zero response code');
+                throw new AliexpressAccessTokenManagerException($response['message'] ?? 'Non-zero response code');
             }
 
             $existingSeller = $this->tenantRepository->findOneByAliexpressSellerId($data['seller_id']);
             if (null !== $existingSeller && null !== $this->tenant && $this->tenant->getId() !== $existingSeller->getId()) {
-                throw new AliexpressAccessTokenManagerException('This seller has already registered on the platform');
+                throw new AliexpressAccessTokenManagerException('This seller account is already connected to another store. Please use a different seller account');
             }
 
             $config = [

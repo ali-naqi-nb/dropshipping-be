@@ -154,10 +154,10 @@ final class RefreshTokenAppCommandHandlerTest extends IntegrationTestCase
         $validatorMock = $this->createMock(AppValidator::class);
         $validatorMock->method('validateAppId')->willReturn(null);
 
-        $aliexpressAccessTokenManagerExceptionMock = $this->createMock(AliexpressAccessTokenManagerException::class);
+        $aliexpressAccessTokenManagerExceptionMessage = 'Aliexpress service error';
 
         $aliexpressAccessTokenManagerMock = $this->createMock(AliexpressAccessTokenManager::class);
-        $aliexpressAccessTokenManagerMock->method('refreshAccessToken')->willThrowException($aliexpressAccessTokenManagerExceptionMock);
+        $aliexpressAccessTokenManagerMock->method('refreshAccessToken')->willThrowException(new AliexpressAccessTokenManagerException($aliexpressAccessTokenManagerExceptionMessage));
 
         $responseMapperMock = $this->createMock(AppResponseMapper::class);
 
@@ -172,6 +172,6 @@ final class RefreshTokenAppCommandHandlerTest extends IntegrationTestCase
         /** @var ErrorResponse $response */
         $response = $handler->__invoke($command);
         $this->assertInstanceOf(ErrorResponse::class, $response);
-        $this->assertSame(['common' => 'Failed to refresh access token.'], $response->getErrors());
+        $this->assertSame(['common' => $aliexpressAccessTokenManagerExceptionMessage], $response->getErrors());
     }
 }

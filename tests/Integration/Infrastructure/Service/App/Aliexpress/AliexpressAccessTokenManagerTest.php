@@ -132,7 +132,7 @@ class AliexpressAccessTokenManagerTest extends IntegrationTestCase
     public function testExchangeTemporaryTokenWithExistingUserAccessTokenThrowsAliexpressAccessTokenManagerException(): void
     {
         $this->expectException(AliexpressAccessTokenManagerException::class);
-        $this->expectExceptionMessage('This seller has already registered on the platform');
+        $this->expectExceptionMessage('This seller account is already connected to another store. Please use a different seller account');
 
         /** @var Tenant $tenant */
         $tenant = $this->tenantRepository->findOneById(TenantFactory::TENANT_ID);

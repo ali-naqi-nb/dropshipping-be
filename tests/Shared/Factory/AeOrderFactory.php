@@ -72,6 +72,11 @@ final class AeOrderFactory
         ],
     ];
 
+    public const AliExpressGetAddressResponse = [
+        'country' => 'NG',
+        'children' => '[{"children":[{"hasChildren":false,"name":"Aba North","type":"CITY"},{"hasChildren":false,"name":"Aba South","type":"CITY"},{"hasChildren":false,"name":"Arochukwu","type":"CITY"},{"hasChildren":false,"name":"Other","type":"CITY"}],"hasChildren":true,"name":"Abia State","type":"PROVINCE"},{"children":[{"hasChildren":false,"name":"Abaji","type":"CITY"},{"hasChildren":false,"name":"Bwari","type":"CITY"},{"hasChildren":false,"name":"Other","type":"CITY"}],"hasChildren":true,"name":"Abuja","type":"PROVINCE"},{"children":[{"hasChildren":false,"name":"Lagos","type":"CITY"},{"hasChildren":false,"name":"Ikeja","type":"CITY"},{"hasChildren":false,"name":"Other","type":"CITY"}],"hasChildren":true,"name":"Lagos State","type":"PROVINCE"}]',
+    ];
+
     public static function getPlaceOrderPayload(
         array $logistics_address = self::LOGISTICS_ADDRESS,
         array $product_items = self::PRODUCT_ITEMS
